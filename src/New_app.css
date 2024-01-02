@@ -50,7 +50,6 @@ body {
     border: 2px solid #D9D9D9;
 }
 
-#pictures-container > #scene-input > #scene-input-box > img,  
 #pictures-container > #rendered-images-container > #rendered-row-1 > .rendered-image > img,  
 #pictures-container > #rendered-images-container > #rendered-row-2 > .rendered-image > img{
     position: relative;
@@ -59,12 +58,26 @@ body {
     object-fit: cover;
 }
 
+#scene-input-label:hover .tooltip {
+    visibility: visible;
+}
+
+#scene-input-label {
+    position: relative;
+}
+
 #pictures-container > #scene-input > label {
     background-color: #D9D9D9;
     border: 1px solid black;
     padding: 5px 10px;
     border-radius: 8px;
     cursor: pointer;
+    font-size: 12px !important;
+    margin-top: 1em;
+}
+
+#input-file-name {
+    font-size: 14px;
 }
 
 #pictures-container > #scene-input > input {
@@ -91,6 +104,19 @@ body {
     overflow: hidden;
     flex: 0 0 230px;
     position: relative;
+}
+
+#download-image {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    background-color: rgba(255, 255, 255, 0.753);
+    border: 1px solid gray;
+}
+
+#download-image:hover {
+    background-color: white;
+    cursor: pointer;
 }
 
 /* other input fields */
@@ -131,14 +157,14 @@ body {
 }
 
 .tooltip {
-visibility: hidden;
-position: absolute;
-top: -30px;
-border: 1px solid black;
-border-radius: 4px;
-padding: 2px 4px;
-background-color: #D9D9D9;
-font-size: 12px;
+    visibility: hidden;
+    position: absolute;
+    /* top: -30px; */
+    border: 1px solid black;
+    border-radius: 4px;
+    padding: 2px 4px;
+    background-color: #D9D9D9;
+    font-size: 12px;
 }
 
 .resolution-label:hover .tooltip {
@@ -156,4 +182,60 @@ font-size: 12px;
 
 #render:hover {
     background-color: #f6b900c7;
+}
+
+#download-icon {
+    height: 15px;
+}
+
+.error-input-field {
+    border: 2px solid rgb(255, 131, 131) !important;
+}
+
+.tooltip-visible {
+    visibility: visible !important;
+    border: 1px solid red;
+    color: red;
+}
+
+/* LOADING ANIMATION */
+
+#loader {
+    visibility: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: row;
+    gap: 5px;
+
+    margin-top: 50px;
+    height: 50px;
+}
+
+.visible-loader {
+    visibility: visible !important;
+}
+
+.loading-column {
+    background-color: #F6B700;
+    height: 30px;
+    width: 16px;
+    animation: loading 1s ease infinite; 
+}
+
+@keyframes loading {
+    0%, 100% {
+        height: 30px;
+    }
+    50% {
+        height: 50px;
+    }
+}
+
+.loading-column:nth-child(2) {
+    animation-delay: .3s;
+}
+
+.loading-column:nth-child(3) {
+    animation-delay: .67s;
 }

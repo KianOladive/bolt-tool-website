@@ -5,13 +5,16 @@ import Nav from "./components/navbar"
 import Input from "./components/Input"
 import darrow from "./static/images/down-arrow.png"
 import uarrow from "./static/images/up-arrow.png"
+import download_image from "./static/images/download.png"
 
 
 const App = () => {
 
   const [imageInput, setImageInput] = useState("")
+  const [inputFile, setInputFile] = useState(false)
   const [imageData, setImageData] = useState('')
   const [validImage, setValidImage] = useState(false)
+  const [fileName, setFileName] = useState(null)
 
   const [num, setNum] = useState(null)
 
@@ -19,39 +22,120 @@ const App = () => {
     return `data:image/png;base64,${base64String}`;
   };
 
-  useEffect(() => {
-    const inputImage = document.getElementById("input-img");
-    const inputFile = document.getElementById("upload-image");
-
-    inputFile.onchange = () => {
-      inputImage.src = URL.createObjectURL(inputFile.files[0]);
-      setNum(inputFile.files[0].name.split(".")[0])
+  function isNaturalNumber(n) {
+    if (Number.isInteger(Number(n)) && Number(n)>0) {
+      return true
     }
-  }, []);
+    return false
+  }
+
+  function downloadImage() {
+    const base64ToBlob = (base64String) => {
+      const byteCharacters = atob(base64String);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      return new Blob([byteArray], { type: 'image/jpeg' }); // Replace 'image/jpeg' with the appropriate MIME type
+    };
+
+    const blob = base64ToBlob(imageData);
+    // Create a download link
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'downloaded-image.jpg'; // Specify the desired file name
+    // Simulate a click on the link to trigger the download
+    link.click();
+    // Clean up
+    URL.revokeObjectURL(link.href);
+  }
+
+  function normalHasError(inp) {
+    if ("01".includes(inp) && inp != "") {
+      return false
+    }
+    return true
+  }
 
   function pressRender() {
     var resolution = document.getElementById("resolution").value
-    var resval;
-    if (resolution == "640x480") {
-      resval = "1"
-    } else if (resolution == "1280x720") {
-      resval = "2"
-    } else if (resolution == "1920x1080") {
-      resval = "3"
-    } else if (resolution == "2560x1440") {
-      resval = "4"
-    } else if (resolution == "3840x2160") {
-      resval = "5"
+    var samples = document.getElementById("samples").value
+    var normal = document.getElementById("normal").value
+    
+    var samplesTooltip = document.getElementById("samples-tooltip")
+    var samplesDiv = document.getElementById("samples")
+    var normalTooltip = document.getElementById("normal-tooltip")
+    var normalDiv = document.getElementById("normal")
+
+    var loadingAnimation = document.getElementById("loader")
+
+    if (isNaturalNumber(samples) && "01".includes(normal)) {
+
+      samplesTooltip.classList.remove("tooltip-visible")
+      samplesDiv.classList.remove("error-input-field")
+      normalTooltip.classList.remove("tooltip-visible")
+      normalDiv.classList.remove("error-input-field")
+
+      loadingAnimation.classList.add("visible-loader")
+
+      var resval;
+      if (resolution == "640x480") {
+        resval = "1"
+      } else if (resolution == "1280x720") {
+        resval = "2"
+      } else if (resolution == "1920x1080") {
+        resval = "3"
+      } else if (resolution == "2560x1440") {
+        resval = "4"
+      } else if (resolution == "3840x2160") {
+        resval = "5"
+      }
+      api.post('/api/dll-test/?integer=' + num + '&integer2=' + resval, {})
+        .then(function (response) {
+          setImageData(response.data)
+          setValidImage(true)
+          loadingAnimation.classList.remove("visible-loader")
+        })
+        .catch(function (error) {
+          console.log(error);
+        });
+
+    } else {
+      // throw validation errors
+      if (!isNaturalNumber(samples) && !normalHasError(normal)) { // only samples has error
+        samplesTooltip.classList.add("tooltip-visible")
+        samplesDiv.classList.add("error-input-field")
+        normalTooltip.classList.remove("tooltip-visible")
+        normalDiv.classList.remove("error-input-field")
+      } 
+      
+      else if (normalHasError(normal) && isNaturalNumber(samples)) { // only normal has error 
+        normalTooltip.classList.add("tooltip-visible")
+        normalDiv.classList.add("error-input-field")
+        samplesTooltip.classList.remove("tooltip-visible")
+        samplesDiv.classList.remove("error-input-field")
+      }
+
+      else { // both samples and normal have error
+        samplesTooltip.classList.add("tooltip-visible")
+        samplesDiv.classList.add("error-input-field")
+        normalTooltip.classList.add("tooltip-visible")
+        normalDiv.classList.add("error-input-field")
+      }
     }
-    api.post('/api/dll-test/?integer=' + num + '&integer2=' + resval, {})
-      .then(function (response) {
-        setImageData(response.data)
-        setValidImage(true)
-      })
-      .catch(function (error) {
-        console.log(error);
-      });
+    
   }
+
+  useEffect(() => {
+    const inputFile = document.getElementById("upload-usd")
+    inputFile.onchange = () => {
+      setNum(inputFile.files[0].name.split(".")[0])
+      setFileName(inputFile.files[0].name)
+      setInputFile(true)
+    }
+  }, []);
+
 
   return (
     <>
@@ -60,19 +144,19 @@ const App = () => {
 
         <div id="pictures-container">
           <div id="scene-input">
-            <div id="scene-input-label">Scene Input*</div>
-            <div id="scene-input-box"><img id="input-img"></img></div>
-            <label for="upload-image">Upload Image</label>
-            <input type="file" accept="image/png, image/jpeg, image/jpg" id="upload-image" />
+            <div id="scene-input-label"><div className="tooltip">USD or EXR file to process</div>Scene Input *</div>
+            <label for="upload-usd">Upload File</label>
+            <input type="file" accept=".usd, .exr" id="upload-usd" />
+            <div id='input-file-name'>{inputFile ? fileName : "No file chosen."}</div>
           </div>
           <div id="rendered-images-container">
             <div id="rendered-row-1">
-              <div className='rendered-image'>{validImage ? <img src={base64ToDataURI(imageData)}></img> : null}</div>
-              <div className='rendered-image'>{validImage ? <img src={base64ToDataURI(imageData)}></img> : null}</div>
+              <div className='rendered-image'>{validImage ? <img src={base64ToDataURI(imageData)}></img> : null} <button id="download-image" onClick={downloadImage}><img id="download-icon" src={download_image }></img></button></div>
+              <div className='rendered-image'>{validImage ? <img src={base64ToDataURI(imageData)}></img> : null} <button id="download-image" onClick={downloadImage}><img id="download-icon" src={download_image }></img></button></div>
             </div>
             <div id="rendered-row-2">
-              <div className='rendered-image'>{validImage ? <img src={base64ToDataURI(imageData)}></img> : null}</div>
-              <div className='rendered-image'>{validImage ? <img src={base64ToDataURI(imageData)}></img> : null}</div>
+              <div className='rendered-image'>{validImage ? <img src={base64ToDataURI(imageData)}></img> : null} <button id="download-image" onClick={downloadImage}><img id="download-icon" src={download_image }></img></button></div>
+              <div className='rendered-image'>{validImage ? <img src={base64ToDataURI(imageData)}></img> : null} <button id="download-image" onClick={downloadImage}><img id="download-icon" src={download_image }></img></button></div>
             </div>
           </div>
         </div>
@@ -93,6 +177,11 @@ const App = () => {
             <Input id="normal" label="Normal *" hover="Accepted values are 0 (face) or 1 (interpolated)" />
           </div>
           <button id="render" onClick={pressRender}>Render</button>
+          <div id="loader">
+            <div className='loading-column'></div>
+            <div className='loading-column'></div>
+            <div className='loading-column'></div>
+          </div>
         </div>
 
       </div>
